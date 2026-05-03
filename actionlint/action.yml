@@ -1,0 +1,7 @@
+name: actionlint
+description: Lints GitHub Actions workflow files with actionlint
+
+runs:
+  using: composite
+  steps:
+    - uses: raven-actions/actionlint@v2

@@ -4,6 +4,15 @@ Shared [composite GitHub Actions](https://docs.github.com/en/actions/sharing-aut
 
 ## Available actions
 
+### `actionlint`
+
+Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd/actionlint).
+
+```yaml
+- uses: actions/checkout@v6
+- uses: amqp-rs/actions/actionlint@main
+```
+
 ### `lint`
 
 Runs clippy, rustfmt, and doc checks on stable Rust.
