@@ -83,6 +83,14 @@ Sets `VCPKG_ROOT` and installs `openssl:x64-windows-static-md` via vcpkg on Wind
 - uses: amqp-rs/actions/openssl-vcpkg@main
 ```
 
+### `windows-setup-tls-env`
+
+Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step. Use this for crates that need all three (e.g. `amq-protocol`, `tcp-stream`, `lapin`).
+
+```yaml
+- uses: amqp-rs/actions/windows-setup-tls-env@main
+```
+
 ## Typical workflow patterns
 
 ### Standard crate (rustls / aws-lc-rs backend)
@@ -91,6 +99,17 @@ Sets `VCPKG_ROOT` and installs `openssl:x64-windows-static-md` via vcpkg on Wind
 steps:
   - uses: actions/checkout@v6
   - uses: amqp-rs/actions/aws-lc-sys-deps@main
+  - uses: amqp-rs/actions/build@main
+    with:
+      rust: ${{ matrix.rust }}
+```
+
+### Crate with full TLS environment (amq-protocol, tcp-stream, lapin)
+
+```yaml
+steps:
+  - uses: actions/checkout@v6
+  - uses: amqp-rs/actions/windows-setup-tls-env@main
   - uses: amqp-rs/actions/build@main
     with:
       rust: ${{ matrix.rust }}

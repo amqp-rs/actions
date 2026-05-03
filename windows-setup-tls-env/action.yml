@@ -1,0 +1,9 @@
+name: Setup Windows TLS environment
+description: Installs aws-lc-sys dependencies, sets up OpenSSL via vcpkg, and disables OpenSSL vendoring
+
+runs:
+  using: composite
+  steps:
+    - uses: amqp-rs/actions/aws-lc-sys-deps@main
+    - uses: amqp-rs/actions/openssl-vcpkg@main
+    - uses: amqp-rs/actions/openssl-no-vendor@main
