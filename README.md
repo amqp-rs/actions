@@ -48,14 +48,14 @@ Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `ca
 - uses: actions/checkout@v6
 - uses: amqp-rs/actions/build@main
   with:
-    rust: stable   # any rustup toolchain string; default: stable
+    rust: stable   # stable, nightly, beta, msrv, or an explicit version; default: stable
     check: 'true'  # set to 'false' to skip cargo check steps
     test: 'true'   # set to 'false' to skip cargo test
 ```
 
 | Input | Default | Description |
 |---|---|---|
-| `rust` | `stable` | Toolchain to install (`stable`, `nightly`, `beta`, or an MSRV such as `1.88.0`) |
+| `rust` | `stable` | Toolchain to install (`stable`, `nightly`, `beta`, `msrv`, or an explicit version such as `1.88.0`); `msrv` reads `rust-version` from `Cargo.toml` |
 | `check` | `true` | Run `cargo check --all --bins --examples --tests --all-features` (and the nightly `-Z features=dev_dep` variant) |
 | `test` | `true` | Run `cargo test` |
 
@@ -141,7 +141,7 @@ jobs:
         include:
           - { os: ubuntu-latest, rust: nightly }
           - { os: ubuntu-latest, rust: beta }
-          - { os: ubuntu-latest, rust: 1.88.0 }
+          - { os: ubuntu-latest, rust: msrv }
     steps:
       - uses: actions/checkout@v6
       - uses: amqp-rs/actions/build@main
@@ -158,7 +158,7 @@ jobs:
           - 5672:5672
     strategy:
       matrix:
-        rust: [nightly, beta, stable, 1.88.0]
+        rust: [nightly, beta, stable, msrv]
     steps:
       - uses: actions/checkout@v6
       - uses: amqp-rs/actions/build@main

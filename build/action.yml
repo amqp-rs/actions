@@ -3,7 +3,7 @@ description: Installs a Rust toolchain, runs cargo check and cargo test
 
 inputs:
   rust:
-    description: Rust toolchain version (stable, nightly, beta, or an MSRV like 1.88.0)
+    description: Rust toolchain version (stable, nightly, beta, msrv, or an explicit version like 1.88.0)
     required: false
     default: stable
   check:
@@ -18,9 +18,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Extract MSRV from Cargo.toml
+      id: msrv
+      shell: bash
+      run: |
+        version=$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' Cargo.toml | head -1)
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
     - uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: ${{ inputs.rust }}
+        toolchain: ${{ inputs.rust == 'msrv' && steps.msrv.outputs.version || inputs.rust }}
 
     - uses: Swatinem/rust-cache@v2
 
