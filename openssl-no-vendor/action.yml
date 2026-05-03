@@ -1,0 +1,9 @@
+name: Disable OpenSSL vendoring
+description: Sets OPENSSL_NO_VENDOR=1 to prevent openssl-sys from building a bundled OpenSSL
+
+runs:
+  using: composite
+  steps:
+    - name: Disable OpenSSL vendoring
+      shell: bash
+      run: echo "OPENSSL_NO_VENDOR=1" >> "$GITHUB_ENV"

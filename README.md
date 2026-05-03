@@ -67,6 +67,14 @@ Installs NASM and ninja-build on Windows, required by `aws-lc-rs` and `aws-lc-fi
 - uses: amqp-rs/actions/aws-lc-sys-deps@main
 ```
 
+### `openssl-no-vendor`
+
+Sets `OPENSSL_NO_VENDOR=1` to prevent `openssl-sys` from building a bundled OpenSSL.
+
+```yaml
+- uses: amqp-rs/actions/openssl-no-vendor@main
+```
+
 ### `openssl-vcpkg`
 
 Sets `VCPKG_ROOT` and installs `openssl:x64-windows-static-md` via vcpkg on Windows. No-op on Linux and macOS.
