@@ -1,0 +1,13 @@
+name: Setup aws-lc-sys dependencies (Windows)
+description: Installs NASM and ninja-build for aws-lc-rs / aws-lc-fips-sys on Windows
+
+runs:
+  using: composite
+  steps:
+    - name: Install NASM for aws-lc-rs on Windows
+      if: runner.os == 'Windows'
+      uses: ilammy/setup-nasm@v1
+
+    - name: Install ninja-build tool for aws-lc-fips-sys on Windows
+      if: runner.os == 'Windows'
+      uses: seanmiddleditch/gha-setup-ninja@v6

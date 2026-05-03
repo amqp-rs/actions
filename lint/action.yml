@@ -1,0 +1,25 @@
+name: Lint
+description: Runs clippy, rustfmt, and doc checks on stable Rust
+
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: clippy, rustfmt
+
+    - uses: Swatinem/rust-cache@v2
+
+    - name: Run clippy
+      shell: bash
+      run: cargo clippy --all-features -- -W clippy::all
+
+    - name: Check formatting
+      shell: bash
+      run: cargo fmt --all -- --check
+
+    - name: Check documentation
+      shell: bash
+      env:
+        RUSTDOCFLAGS: -D warnings
+      run: cargo doc --no-deps --document-private-items --all-features

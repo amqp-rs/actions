@@ -1,0 +1,15 @@
+name: Setup OpenSSL via vcpkg (Windows)
+description: Sets VCPKG_ROOT and installs OpenSSL via vcpkg on Windows
+
+runs:
+  using: composite
+  steps:
+    - name: Set VCPKG_ROOT
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+    - name: Install OpenSSL
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: vcpkg install openssl:x64-windows-static-md

@@ -1,0 +1,7 @@
+name: Semver compliance check
+description: Runs cargo-semver-checks to enforce semver compliance
+
+runs:
+  using: composite
+  steps:
+    - uses: obi1kenobi/cargo-semver-checks-action@v2
