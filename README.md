@@ -4,12 +4,20 @@ Shared [composite GitHub Actions](https://docs.github.com/en/actions/sharing-aut
 
 ## Available actions
 
+### `checkout`
+
+Checks out the repository. Thin wrapper around `actions/checkout`.
+
+```yaml
+- uses: amqp-rs/actions/checkout@main
+```
+
 ### `actionlint`
 
 Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd/actionlint).
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: amqp-rs/actions/checkout@main
 - uses: amqp-rs/actions/actionlint@main
 ```
 
@@ -18,7 +26,7 @@ Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd
 Runs clippy, rustfmt, and doc checks on stable Rust.
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: amqp-rs/actions/checkout@main
 - uses: amqp-rs/actions/lint@main
 ```
 
@@ -27,7 +35,7 @@ Runs clippy, rustfmt, and doc checks on stable Rust.
 Runs `cargo audit` via the [RustSec advisory database](https://rustsec.org/).
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: amqp-rs/actions/checkout@main
 - uses: amqp-rs/actions/security@main
 ```
 
@@ -36,7 +44,7 @@ Runs `cargo audit` via the [RustSec advisory database](https://rustsec.org/).
 Checks semver compliance with [`cargo-semver-checks`](https://github.com/obi1kenobi/cargo-semver-checks).
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: amqp-rs/actions/checkout@main
 - uses: amqp-rs/actions/semver@main
 ```
 
@@ -45,7 +53,7 @@ Checks semver compliance with [`cargo-semver-checks`](https://github.com/obi1ken
 Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `cargo test` with `RUSTFLAGS=-D warnings`.
 
 ```yaml
-- uses: actions/checkout@v6
+- uses: amqp-rs/actions/checkout@main
 - uses: amqp-rs/actions/build@main
   with:
     rust: stable   # stable, nightly, beta, msrv, or an explicit version; default: stable
@@ -97,7 +105,7 @@ Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step
 
 ```yaml
 steps:
-  - uses: actions/checkout@v6
+  - uses: amqp-rs/actions/checkout@main
   - uses: amqp-rs/actions/aws-lc-sys-deps@main
   - uses: amqp-rs/actions/build@main
     with:
@@ -108,7 +116,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: actions/checkout@v6
+  - uses: amqp-rs/actions/checkout@main
   - uses: amqp-rs/actions/windows-setup-tls-env@main
   - uses: amqp-rs/actions/build@main
     with:
@@ -119,7 +127,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: actions/checkout@v6
+  - uses: amqp-rs/actions/checkout@main
   - uses: amqp-rs/actions/openssl-vcpkg@main
   - uses: amqp-rs/actions/build@main
     with:
@@ -143,7 +151,7 @@ jobs:
           - { os: ubuntu-latest, rust: beta }
           - { os: ubuntu-latest, rust: msrv }
     steps:
-      - uses: actions/checkout@v6
+      - uses: amqp-rs/actions/checkout@main
       - uses: amqp-rs/actions/build@main
         with:
           rust: ${{ matrix.rust }}
@@ -160,7 +168,7 @@ jobs:
       matrix:
         rust: [nightly, beta, stable, msrv]
     steps:
-      - uses: actions/checkout@v6
+      - uses: amqp-rs/actions/checkout@main
       - uses: amqp-rs/actions/build@main
         with:
           rust: ${{ matrix.rust }}
