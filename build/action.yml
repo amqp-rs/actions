@@ -35,10 +35,15 @@ runs:
       shell: bash
       run: echo "RUSTFLAGS=-D warnings" >> "$GITHUB_ENV"
 
+    - uses: taiki-e/install-action@v2
+      if: inputs.check == 'true'
+      with:
+        tool: cargo-hack
+
     - name: Run cargo check
       if: inputs.check == 'true'
       shell: bash
-      run: cargo check --all --bins --examples --tests --all-features
+      run: cargo hack check --each-feature --all --bins --examples --tests
 
     - name: Run cargo check (without dev-dependencies to catch missing feature flags)
       if: inputs.check == 'true' && inputs.rust == 'nightly'
