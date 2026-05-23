@@ -64,7 +64,7 @@ Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `ca
 | Input | Default | Description |
 |---|---|---|
 | `rust` | `stable` | Toolchain to install (`stable`, `nightly`, `beta`, `msrv`, or an explicit version such as `1.88.0`); `msrv` reads `rust-version` from `Cargo.toml` |
-| `check` | `true` | Run `cargo check --all --bins --examples --tests --all-features` (and the nightly `-Z features=dev_dep` variant) |
+| `check` | `true` | Run `cargo hack check --each-feature --all --bins --examples --tests` (and the nightly `-Z features=dev_dep` variant) |
 | `test` | `true` | Run `cargo test` |
 
 ### `aws-lc-sys-deps`
