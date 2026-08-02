@@ -35,7 +35,7 @@ runs:
       shell: bash
       run: echo "RUSTFLAGS=-D warnings" >> "$GITHUB_ENV"
 
-    - uses: taiki-e/install-action@v2
+    - uses: taiki-e/install-action@v2.85.5
       if: inputs.check == 'true'
       with:
         tool: cargo-hack
