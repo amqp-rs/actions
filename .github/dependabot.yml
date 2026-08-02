@@ -1,6 +1,22 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
-    directory: /
+    # `/` only covers .github/workflows and a root action.yml, so every
+    # composite action directory has to be listed explicitly or it is never
+    # scanned. Listed rather than globbed on purpose: a `/*` wildcard can make
+    # Dependabot scan .github/workflows twice and open duplicate PRs.
+    # See https://github.com/dependabot/dependabot-core/issues/10884
+    directories:
+      - /
+      - /actionlint
+      - /aws-lc-sys-deps
+      - /build
+      - /checkout
+      - /lint
+      - /openssl-no-vendor
+      - /openssl-vcpkg
+      - /security
+      - /semver
+      - /windows-setup-tls-env
     schedule:
       interval: weekly
