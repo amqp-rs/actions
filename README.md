@@ -69,7 +69,7 @@ Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `ca
 
 ### `aws-lc-sys-deps`
 
-Installs NASM and ninja-build on Windows, required by `aws-lc-rs` and `aws-lc-fips-sys`. No-op on Linux and macOS.
+Installs NASM and checks that Ninja is available on Windows, as required by `aws-lc-rs` and `aws-lc-fips-sys`. GitHub-hosted Windows runners include Ninja. No-op on Linux and macOS.
 
 ```yaml
 - uses: amqp-rs/actions/aws-lc-sys-deps@main
