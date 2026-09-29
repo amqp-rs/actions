@@ -24,7 +24,7 @@ actions/
 - `if:` conditions on steps support `inputs.<name>` and `runner.os` expressions.
 - Boolean inputs are strings: compare with `== 'true'` / `== 'false'`, not `== true`.
 - Steps using `uses:` do not require `shell:`.
-- Composite actions cannot define job-level `env`, matrix strategies, or services — those stay in the calling workflow.
+- Composite actions cannot define job-level `env`, matrix strategies, services, or `GITHUB_TOKEN` permissions — those stay in the calling workflow. See `README.md` for each caller's required token scopes.
 - `$GITHUB_ENV` writes persist for the remainder of the job (including steps in the calling workflow after this action returns). The `build` action uses this to set `RUSTFLAGS=-D warnings` once rather than repeating it per step.
 
 ## Consumers

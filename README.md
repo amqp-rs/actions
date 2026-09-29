@@ -99,6 +99,33 @@ Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step
 - uses: amqp-rs/actions/windows-setup-tls-env@main
 ```
 
+## Workflow token permissions
+
+These are composite actions: they use the calling job's `GITHUB_TOKEN` and cannot
+set its permissions themselves. Declare the scopes in the caller workflow or job.
+When any `permissions` are declared, GitHub sets every unlisted scope to `none`.
+
+| Calling workflow | Required `permissions` |
+|---|---|
+| Checkout, actionlint, build, lint, semver, TLS setup | `contents: read` |
+| Security on push or pull request | `contents: read`, `checks: write` |
+| Security on schedule | `contents: read`, `checks: write`, `issues: write` |
+
+The security action runs `rustsec/audit-check`, which publishes a check run and
+can create issues during a scheduled audit. Keep `issues: write`
+limited to the scheduled job. GitHub may still give forked pull requests a
+read-only token, regardless of the requested scopes.
+
+For example, give the read-only workflows a top-level block:
+
+```yaml
+permissions:
+  contents: read
+```
+
+For the security workflow, use separate jobs with the event filters and
+permissions shown in the [crate workflows](https://github.com/amqp-rs/async-openssl/blob/main/.github/workflows/security.yaml).
+
 ## Typical workflow patterns
 
 ### Standard crate (rustls / aws-lc-rs backend)
