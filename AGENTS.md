@@ -29,7 +29,7 @@ actions/
 
 ## Consumers
 
-All six amqp-rs crate repositories call these actions. Their workflow files are the canonical examples of intended usage:
+All six amqp-rs crate repositories call these actions. Their workflow files are the canonical examples of intended usage. They reference `@main` on purpose and must not be pinned, because this repository is how action bumps stay in sync across them (see "Versioning" in `README.md`):
 
 | Repo | Setup action | Notes |
 |---|---|---|

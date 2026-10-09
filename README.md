@@ -99,6 +99,12 @@ Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step
 - uses: amqp-rs/actions/windows-setup-tls-env@main
 ```
 
+## Versioning: reference `@main`, do not pin
+
+Consumers reference these actions as `amqp-rs/actions/<name>@main`, not by commit SHA or tag. This is on purpose. The amqp-rs maintainers own this repository, and it exists to synchronize action bumps across all amqp-rs repositories. A change merged here, such as a new major of `actions/checkout`, reaches every crate's CI at once. Pinning consumers would mean the same bump in every repository again.
+
+Inside this repository, third-party actions are referenced by major tag (e.g. `actions/checkout@v7`). They are kept current by this repository's Dependabot config, so the consumer repositories configure Dependabot for `cargo` only.
+
 ## Workflow token permissions
 
 These are composite actions: they use the calling job's `GITHUB_TOKEN` and cannot
