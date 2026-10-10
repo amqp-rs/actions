@@ -14,7 +14,8 @@ actions/
   semver/action.yml                  # cargo-semver-checks
   aws-lc-sys-deps/action.yml         # NASM install + Ninja availability check on Windows
   openssl-no-vendor/action.yml       # sets OPENSSL_NO_VENDOR=1
-  openssl-vcpkg/action.yml           # OpenSSL via vcpkg on Windows
+  openssl-vcpkg/action.yml           # OpenSSL via vcpkg on Windows (release-only triplets, binary cache)
+  openssl-vcpkg/triplets/            # overlay triplets used by openssl-vcpkg
   windows-setup-tls-env/action.yml   # combines aws-lc-sys-deps + openssl-vcpkg + openssl-no-vendor (Windows only)
 ```
 

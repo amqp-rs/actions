@@ -1,15 +1,49 @@
 name: Setup OpenSSL via vcpkg (Windows)
-description: Sets VCPKG_ROOT and installs OpenSSL via vcpkg on Windows
+description: On Windows, installs a cached, release-only static OpenSSL for the runner's architecture with vcpkg and points openssl-sys at it
 
 runs:
   using: composite
   steps:
-    - name: Set VCPKG_ROOT
+    - name: Configure vcpkg
+      id: vcpkg
       if: runner.os == 'Windows'
       shell: pwsh
-      run: echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+      env:
+        # Release-only variant of vcpkg-rs's default x64/arm64-windows-static-md:
+        # openssl-sys never links the debug build vcpkg would also compile.
+        TRIPLET: ${{ runner.arch == 'ARM64' && 'arm64' || 'x64' }}-windows-static-md-release
+      run: |
+        $archives = Join-Path $env:RUNNER_TEMP vcpkg-archives
+        New-Item -ItemType Directory -Force -Path $archives | Out-Null
+        # Key the cache on everything that changes the package ABI: the vcpkg
+        # checkout (ports, scripts), the image (compiler) and the triplet.
+        $rev = git -C $env:VCPKG_INSTALLATION_ROOT rev-parse --short HEAD
+        if ($LASTEXITCODE -ne 0) { $rev = 'unknown'; $global:LASTEXITCODE = 0 }
+        $triplet = (Get-FileHash "$env:GITHUB_ACTION_PATH/triplets/$env:TRIPLET.cmake").Hash.Substring(0, 8)
+        "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "VCPKG_BINARY_SOURCES=clear;files,$archives,readwrite" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "VCPKGRS_TRIPLET=$env:TRIPLET" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "archives=$archives" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        "key=vcpkg-openssl-$env:TRIPLET-$triplet-$env:ImageVersion-$rev" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+    - name: Restore the vcpkg binary cache
+      id: cache
+      if: runner.os == 'Windows'
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.vcpkg.outputs.archives }}
+        key: ${{ steps.vcpkg.outputs.key }}
 
     - name: Install OpenSSL
       if: runner.os == 'Windows'
       shell: pwsh
-      run: vcpkg install openssl:x64-windows-static-md
+      run: vcpkg install "--overlay-triplets=$env:GITHUB_ACTION_PATH/triplets" "openssl:$env:VCPKGRS_TRIPLET"
+
+    # Saved right away rather than at the end of the job, so a later build or
+    # test failure does not throw the OpenSSL build away.
+    - name: Save the vcpkg binary cache
+      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.vcpkg.outputs.archives }}
+        key: ${{ steps.vcpkg.outputs.key }}

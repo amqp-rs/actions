@@ -94,7 +94,7 @@ Sets `OPENSSL_NO_VENDOR=1` to prevent `openssl-sys` from building a bundled Open
 
 ### `openssl-vcpkg`
 
-Sets `VCPKG_ROOT` and installs `openssl:x64-windows-static-md` via vcpkg on Windows. No-op on Linux and macOS.
+Installs a static OpenSSL with vcpkg on Windows and points `openssl-sys` at it (`VCPKG_ROOT`, `VCPKGRS_TRIPLET`). It uses a release-only variant of the `x64-windows-static-md` triplet (or `arm64-…` on ARM64 runners), shipped in [`openssl-vcpkg/triplets`](openssl-vcpkg/triplets), because `openssl-sys` never links the debug build. vcpkg's binary packages are cached with `actions/cache`, so OpenSSL is only rebuilt when vcpkg or the runner image changes. No-op on Linux and macOS.
 
 ```yaml
 - uses: amqp-rs/actions/openssl-vcpkg@main
