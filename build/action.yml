@@ -14,6 +14,14 @@ inputs:
     description: Run cargo test
     required: false
     default: 'true'
+  test-features:
+    description: Extra feature sets to test, one per line; each runs cargo test --no-default-features --features <set>
+    required: false
+    default: ''
+  test-args:
+    description: Extra arguments for every cargo test run (e.g. --lib, or -p <package> in a virtual workspace)
+    required: false
+    default: ''
 
 runs:
   using: composite
@@ -94,4 +102,23 @@ runs:
     - name: Run cargo test
       if: inputs.test == 'true'
       shell: bash
-      run: cargo test --locked
+      env:
+        TEST_ARGS: ${{ inputs.test-args }}
+      run: |
+        read -ra args <<< "$TEST_ARGS"
+        cargo test --locked "${args[@]}"
+
+    - name: Run cargo test for each extra feature set
+      if: inputs.test == 'true' && inputs.test-features != ''
+      shell: bash
+      env:
+        TEST_ARGS: ${{ inputs.test-args }}
+        TEST_FEATURES: ${{ inputs.test-features }}
+      run: |
+        read -ra args <<< "$TEST_ARGS"
+        while read -r features; do
+          [ -n "$features" ] || continue
+          echo "::group::cargo test --no-default-features --features '$features'"
+          cargo test --locked --no-default-features --features "$features" "${args[@]}"
+          echo "::endgroup::"
+        done <<< "$TEST_FEATURES"

@@ -59,6 +59,9 @@ Installs a Rust toolchain, sets up build caching, checks the workspace feature b
     rust: stable   # stable, nightly, beta, msrv, or an explicit version; default: stable
     check: 'true'  # set to 'false' to skip cargo check steps
     test: 'true'   # set to 'false' to skip cargo test
+    test-features: |  # optional: extra feature sets to test, one per line
+      smol
+    test-args: ''  # optional: extra cargo test arguments, e.g. --lib
 ```
 
 | Input | Default | Description |
@@ -66,6 +69,8 @@ Installs a Rust toolchain, sets up build caching, checks the workspace feature b
 | `rust` | `stable` | Toolchain to install (`stable`, `nightly`, `beta`, `msrv`, or an explicit version such as `1.88.0`); `msrv` reads `rust-version` with `cargo metadata` and fails unless the workspace declares exactly one |
 | `check` | `true` | Run `cargo hack check --each-feature --workspace --all-targets`; on `stable`, also again with `--no-dev-deps` to catch features that only dev-dependencies enable; on `beta` and `nightly`, only `cargo check` with `--all-features` and with `--no-default-features` |
 | `test` | `true` | Run `cargo test` |
+| `test-features` | empty | Extra feature sets to test, one per line; each runs `cargo test --no-default-features --features <set>` after the default-features run |
+| `test-args` | empty | Extra arguments for every `cargo test` run, e.g. `--lib` to run only unit tests where integration tests need a service, or `-p <package>` in a virtual workspace |
 
 For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolchain.toml` cannot silently swap the matrix toolchain) and appends `-D warnings` to `RUSTFLAGS`. On toolchains older than stable it also appends `-A unknown_lints`, so an `allow` for a lint newer than the MSRV does not fail the build. Pass extra rustflags through a job-level `RUSTFLAGS`: they are kept, whereas `.cargo/config.toml` rustflags are ignored by cargo once `RUSTFLAGS` is set.
 
