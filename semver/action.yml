@@ -5,3 +5,7 @@ runs:
   using: composite
   steps:
     - uses: obi1kenobi/cargo-semver-checks-action@v2
+      env:
+        # Its feature heuristic enables vendored-openssl, which would compile
+        # OpenSSL from source on every run; the build jobs cover vendoring.
+        OPENSSL_NO_VENDOR: '1'

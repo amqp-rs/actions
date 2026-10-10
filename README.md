@@ -41,7 +41,7 @@ Runs `cargo audit` via the [RustSec advisory database](https://rustsec.org/).
 
 ### `semver`
 
-Checks semver compliance with [`cargo-semver-checks`](https://github.com/obi1kenobi/cargo-semver-checks).
+Checks semver compliance with [`cargo-semver-checks`](https://github.com/obi1kenobi/cargo-semver-checks). Like `lint`, it links the system OpenSSL (`OPENSSL_NO_VENDOR=1`) instead of compiling the vendored one.
 
 ```yaml
 - uses: amqp-rs/actions/checkout@main
@@ -102,7 +102,7 @@ Sets `VCPKG_ROOT` and installs `openssl:x64-windows-static-md` via vcpkg on Wind
 
 ### `windows-setup-tls-env`
 
-Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step. Use this for crates that need all three (e.g. `amq-protocol`, `tcp-stream`, `lapin`).
+Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step. Use this for crates that need all three (e.g. `amq-protocol`, `tcp-stream`, `lapin`). Vendoring is only disabled on Windows, so on Linux and macOS the build jobs compile, link and test the `vendored-openssl` feature.
 
 ```yaml
 - uses: amqp-rs/actions/windows-setup-tls-env@main

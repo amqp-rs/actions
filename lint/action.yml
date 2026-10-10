@@ -21,6 +21,9 @@ runs:
     # too; --all-targets covers tests, examples and benches.
     - name: Run clippy on each feature
       shell: bash
+      env:
+        # Link the image's OpenSSL; the build jobs cover the vendored one.
+        OPENSSL_NO_VENDOR: '1'
       run: cargo hack clippy --each-feature --workspace --all-targets --locked -- -D warnings
 
     # The remaining checks run even when clippy fails, so one push reports
@@ -34,5 +37,7 @@ runs:
       if: ${{ !cancelled() && steps.cargo-hack.outcome == 'success' }}
       shell: bash
       env:
+        # Link the image's OpenSSL; the build jobs cover the vendored one.
+        OPENSSL_NO_VENDOR: '1'
         RUSTDOCFLAGS: -D warnings
       run: cargo hack doc --each-feature --workspace --no-deps --document-private-items --locked
