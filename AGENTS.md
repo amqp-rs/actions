@@ -8,7 +8,7 @@ This repository contains shared [composite GitHub Actions](https://docs.github.c
 actions/
   checkout/action.yml                # wrapper around actions/checkout (credentials not persisted)
   actionlint/action.yml              # GitHub Actions workflow linting (pinned actionlint)
-  build/action.yml                   # cargo hack check (each-feature) + cargo test
+  build/action.yml                   # cargo hack check (each-feature, locked) + cargo test
   lint/action.yml                    # clippy + rustfmt + cargo doc
   security/action.yml                # cargo audit (rustsec)
   semver/action.yml                  # cargo-semver-checks
@@ -57,6 +57,7 @@ every repository's CI at once without a reviewed change:
 | Tool | Where |
 |---|---|
 | `actionlint` | `version:` in `actionlint/action.yml` |
+| `cargo-hack` | `tool:` in `build/action.yml` |
 
 ## Dependabot
 

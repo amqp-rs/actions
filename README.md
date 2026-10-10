@@ -50,7 +50,7 @@ Checks semver compliance with [`cargo-semver-checks`](https://github.com/obi1ken
 
 ### `build`
 
-Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `cargo test` with `RUSTFLAGS=-D warnings`.
+Installs a Rust toolchain, sets up build caching, checks the workspace feature by feature with [`cargo-hack`](https://github.com/taiki-e/cargo-hack), and runs `cargo test`. Everything runs with `RUSTFLAGS=-D warnings`, and with `--locked` so a stale `Cargo.lock` fails instead of being rewritten.
 
 ```yaml
 - uses: amqp-rs/actions/checkout@main
@@ -64,7 +64,7 @@ Installs a Rust toolchain, sets up build caching, and runs `cargo check` and `ca
 | Input | Default | Description |
 |---|---|---|
 | `rust` | `stable` | Toolchain to install (`stable`, `nightly`, `beta`, `msrv`, or an explicit version such as `1.88.0`); `msrv` reads `rust-version` with `cargo metadata` and fails unless the workspace declares exactly one |
-| `check` | `true` | Run `cargo hack check --each-feature --all --bins --examples --tests` (and the nightly `-Z features=dev_dep` variant) |
+| `check` | `true` | Run `cargo hack check --each-feature --workspace --all-targets`; on `stable`, also again with `--no-dev-deps` to catch features that only dev-dependencies enable; on `beta` and `nightly`, only `cargo check` with `--all-features` and with `--no-default-features` |
 | `test` | `true` | Run `cargo test` |
 
 For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolchain.toml` cannot silently swap the matrix toolchain) and appends `-D warnings` to `RUSTFLAGS`. On toolchains older than stable it also appends `-A unknown_lints`, so an `allow` for a lint newer than the MSRV does not fail the build. Pass extra rustflags through a job-level `RUSTFLAGS`: they are kept, whereas `.cargo/config.toml` rustflags are ignored by cargo once `RUSTFLAGS` is set.

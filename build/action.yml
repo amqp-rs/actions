@@ -1,5 +1,5 @@
 name: Build and test
-description: Installs a Rust toolchain, runs cargo check and cargo test
+description: Installs a Rust toolchain, checks every feature with cargo-hack, and runs cargo test
 
 inputs:
   rust:
@@ -7,7 +7,7 @@ inputs:
     required: false
     default: stable
   check:
-    description: Run cargo check steps
+    description: Run the cargo check steps
     required: false
     default: 'true'
   test:
@@ -60,21 +60,38 @@ runs:
         echo "RUSTFLAGS=${RUSTFLAGS:+$RUSTFLAGS }$deny" >> "$GITHUB_ENV"
 
     - uses: taiki-e/install-action@v2
-      if: inputs.check == 'true'
+      if: inputs.check == 'true' && inputs.rust != 'beta' && inputs.rust != 'nightly'
       with:
-        tool: cargo-hack
+        # Pinned, see "Pinned tool versions" in AGENTS.md.
+        tool: cargo-hack@0.6.45
 
-    - name: Run cargo check
-      if: inputs.check == 'true'
+    # --all-targets includes the library as users build it; --bins --examples
+    # --tests alone only compiled it as a unit-test harness.
+    - name: Check each feature
+      if: inputs.check == 'true' && inputs.rust != 'beta' && inputs.rust != 'nightly'
       shell: bash
-      run: cargo hack check --each-feature --all --bins --examples --tests
+      run: cargo hack check --each-feature --workspace --all-targets --locked
 
-    - name: Run cargo check (without dev-dependencies to catch missing feature flags)
-      if: inputs.check == 'true' && inputs.rust == 'nightly'
+    # On beta and nightly the sweep would re-check stable's code feature by
+    # feature with a cold cache; the two extreme feature sets are enough to
+    # catch compiler-version regressions.
+    - name: Check with all and with no default features
+      if: inputs.check == 'true' && (inputs.rust == 'beta' || inputs.rust == 'nightly')
       shell: bash
-      run: cargo check -Z features=dev_dep
+      run: |
+        cargo check --workspace --all-targets --locked --all-features
+        cargo check --workspace --all-targets --locked --no-default-features
+
+    # The checks above unify dev-dependency features into every build, which
+    # hides a feature missing from [dependencies]. --no-dev-deps cannot be
+    # combined with --locked (dropping them changes the resolve); cargo-hack
+    # restores Cargo.toml and Cargo.lock when it is done.
+    - name: Check each feature without dev-dependencies
+      if: inputs.check == 'true' && inputs.rust == 'stable'
+      shell: bash
+      run: cargo hack check --each-feature --workspace --no-dev-deps
 
     - name: Run cargo test
       if: inputs.test == 'true'
       shell: bash
-      run: cargo test
+      run: cargo test --locked
