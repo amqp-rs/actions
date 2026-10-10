@@ -78,7 +78,7 @@ For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolc
 
 ### `aws-lc-sys-deps`
 
-Installs NASM and checks that Ninja is available on Windows, as required by `aws-lc-rs` and `aws-lc-fips-sys`. GitHub-hosted Windows runners include Ninja. No-op on Linux and macOS.
+Sets `AWS_LC_SYS_PREBUILT_NASM=1` on Windows, so `aws-lc-sys` (used by `aws-lc-rs`) assembles nothing and links the prebuilt NASM objects it ships instead; no NASM install is needed. FIPS builds (`aws-lc-fips-sys`) are not supported. No-op on Linux and macOS.
 
 ```yaml
 - uses: amqp-rs/actions/aws-lc-sys-deps@main

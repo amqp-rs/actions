@@ -12,7 +12,7 @@ actions/
   lint/action.yml                    # clippy + cargo doc (each-feature, -D warnings) + rustfmt
   security/action.yml                # cargo audit (rustsec)
   semver/action.yml                  # cargo-semver-checks
-  aws-lc-sys-deps/action.yml         # NASM install + Ninja availability check on Windows
+  aws-lc-sys-deps/action.yml         # AWS_LC_SYS_PREBUILT_NASM=1 on Windows
   openssl-no-vendor/action.yml       # sets OPENSSL_NO_VENDOR=1
   openssl-vcpkg/action.yml           # OpenSSL via vcpkg on Windows (release-only triplets, binary cache)
   openssl-vcpkg/triplets/            # overlay triplets used by openssl-vcpkg

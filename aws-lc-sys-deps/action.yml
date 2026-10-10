@@ -1,14 +1,14 @@
 name: Setup aws-lc-sys dependencies (Windows)
-description: Installs NASM and checks for Ninja on Windows for aws-lc-rs / aws-lc-fips-sys
+description: On Windows, makes aws-lc-sys use its bundled prebuilt NASM objects, so no NASM install is needed
 
 runs:
   using: composite
   steps:
-    - name: Install NASM for aws-lc-rs on Windows
-      if: runner.os == 'Windows'
-      uses: ilammy/setup-nasm@v1
-
-    - name: Check Ninja for aws-lc-fips-sys on Windows
+    # aws-lc-sys only needs NASM on x86_64 Windows, and ships prebuilt objects
+    # for it. rustls's aws_lc_rs feature already enables them; the variable
+    # keeps that true for any other path to aws-lc-sys. It is ignored on
+    # other targets. FIPS builds (aws-lc-fips-sys) are not supported.
+    - name: Use prebuilt NASM objects for aws-lc-sys
       if: runner.os == 'Windows'
       shell: pwsh
-      run: ninja --version
+      run: echo "AWS_LC_SYS_PREBUILT_NASM=1" | Out-File -FilePath $env:GITHUB_ENV -Append
