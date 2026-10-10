@@ -1,25 +1,38 @@
 name: Lint
-description: Runs clippy, rustfmt, and doc checks on stable Rust
+description: Runs clippy and rustdoc on every feature set with warnings denied, and checks formatting, on stable Rust
 
 runs:
   using: composite
   steps:
     - uses: dtolnay/rust-toolchain@stable
+      id: toolchain
       with:
         components: clippy, rustfmt
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Run clippy
-      shell: bash
-      run: cargo clippy --all-features -- -W clippy::all
+    - uses: taiki-e/install-action@v2
+      id: cargo-hack
+      with:
+        # Pinned, see "Pinned tool versions" in AGENTS.md.
+        tool: cargo-hack@0.6.45
 
+    # Per feature set, so code only compiled when a feature is off is linted
+    # too; --all-targets covers tests, examples and benches.
+    - name: Run clippy on each feature
+      shell: bash
+      run: cargo hack clippy --each-feature --workspace --all-targets --locked -- -D warnings
+
+    # The remaining checks run even when clippy fails, so one push reports
+    # every problem.
     - name: Check formatting
+      if: ${{ !cancelled() && steps.toolchain.outcome == 'success' }}
       shell: bash
       run: cargo fmt --all -- --check
 
-    - name: Check documentation
+    - name: Check documentation on each feature
+      if: ${{ !cancelled() && steps.cargo-hack.outcome == 'success' }}
       shell: bash
       env:
         RUSTDOCFLAGS: -D warnings
-      run: cargo doc --no-deps --document-private-items --all-features
+      run: cargo hack doc --each-feature --workspace --no-deps --document-private-items --locked

@@ -23,7 +23,7 @@ Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd
 
 ### `lint`
 
-Runs clippy, rustfmt, and doc checks on stable Rust.
+Runs clippy and rustdoc on stable Rust for every feature set [`cargo-hack`](https://github.com/taiki-e/cargo-hack)'s `--each-feature` produces, with warnings denied, and checks formatting. clippy covers all targets (tests, examples and benches included). The formatting and documentation checks still run when clippy fails, so a single push reports every problem.
 
 ```yaml
 - uses: amqp-rs/actions/checkout@main
