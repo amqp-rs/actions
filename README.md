@@ -6,7 +6,7 @@ Shared [composite GitHub Actions](https://docs.github.com/en/actions/sharing-aut
 
 ### `checkout`
 
-Checks out the repository. Thin wrapper around `actions/checkout`.
+Checks out the repository. Thin wrapper around `actions/checkout` with `persist-credentials: false`, so the job token is not left in `.git/config` for build scripts and tests to read.
 
 ```yaml
 - uses: amqp-rs/actions/checkout@main
@@ -14,7 +14,7 @@ Checks out the repository. Thin wrapper around `actions/checkout`.
 
 ### `actionlint`
 
-Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd/actionlint).
+Lints GitHub Actions workflow files with [`actionlint`](https://github.com/rhysd/actionlint), at a pinned version and without the unused `pyflakes` integration.
 
 ```yaml
 - uses: amqp-rs/actions/checkout@main

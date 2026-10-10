@@ -1,7 +1,11 @@
 name: Checkout
-description: Checks out the repository
+description: Checks out the repository without persisting the job token in the git config
 
 runs:
   using: composite
   steps:
     - uses: actions/checkout@v7
+      with:
+        # Nothing after checkout talks to git, so do not leave GITHUB_TOKEN in
+        # .git/config where build scripts, proc-macros and tests can read it.
+        persist-credentials: false

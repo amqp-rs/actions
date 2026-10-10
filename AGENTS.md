@@ -6,8 +6,8 @@ This repository contains shared [composite GitHub Actions](https://docs.github.c
 
 ```
 actions/
-  checkout/action.yml                # wrapper around actions/checkout
-  actionlint/action.yml              # GitHub Actions workflow linting
+  checkout/action.yml                # wrapper around actions/checkout (credentials not persisted)
+  actionlint/action.yml              # GitHub Actions workflow linting (pinned actionlint)
   build/action.yml                   # cargo hack check (each-feature) + cargo test
   lint/action.yml                    # clippy + rustfmt + cargo doc
   security/action.yml                # cargo audit (rustsec)
@@ -47,6 +47,16 @@ All six amqp-rs crate repositories call these actions. Their workflow files are 
 3. Add a `shell:` to every `run:` step.
 4. Document it in `README.md` with a usage snippet.
 5. Add the directory to `directories:` in `.github/dependabot.yml` — see below.
+
+## Pinned tool versions
+
+Dependabot only updates `uses:` refs. Tools installed through an action input
+are pinned here and bumped by hand, so that an upstream release cannot change
+every repository's CI at once without a reviewed change:
+
+| Tool | Where |
+|---|---|
+| `actionlint` | `version:` in `actionlint/action.yml` |
 
 ## Dependabot
 

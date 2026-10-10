@@ -5,3 +5,9 @@ runs:
   using: composite
   steps:
     - uses: raven-actions/actionlint@v2
+      with:
+        # Pinned so a new actionlint check cannot turn every repository red at
+        # once; bump it here by hand (Dependabot does not track this input).
+        version: 1.7.12
+        # pyflakes only checks `shell: python` steps, which no workflow has.
+        pyflakes: false
