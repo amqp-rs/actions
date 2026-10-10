@@ -1,0 +1,73 @@
+name: Self-test
+
+# Runs this commit's actions (`./<name>`, not `amqp-rs/actions/<name>@main`)
+# on the fixture crate in self-test/, so a change is exercised before it
+# reaches every consumer through @main.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable]
+        include:
+          - os: ubuntu-latest
+            rust: nightly
+          - os: ubuntu-latest
+            rust: beta
+          - os: ubuntu-latest
+            rust: msrv
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./checkout
+      # The sub-actions directly: windows-setup-tls-env itself pulls them
+      # from @main, so it cannot test a change to them.
+      - uses: ./aws-lc-sys-deps
+      - uses: ./openssl-vcpkg
+      - uses: ./openssl-no-vendor
+      - name: Move the fixture crate to the workspace root
+        shell: bash
+        run: cp -R self-test/. .
+      - uses: ./build
+        with:
+          rust: ${{ matrix.rust }}
+          test-features: shout
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Move the fixture crate to the workspace root
+        shell: bash
+        run: cp -R self-test/. .
+      - uses: ./lint
+
+  windows-setup-tls-env:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Only checks that the aggregate loads: its sub-actions come from @main
+      # and are no-ops off Windows.
+      - uses: ./windows-setup-tls-env

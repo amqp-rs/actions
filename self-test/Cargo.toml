@@ -1,0 +1,10 @@
+[package]
+name = "amqp-rs-actions-fixture"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.85.0"
+description = "Fixture crate the self-test workflow runs this repository's actions on"
+publish = false
+
+[features]
+shout = []

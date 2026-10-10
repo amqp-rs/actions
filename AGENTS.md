@@ -17,7 +17,27 @@ actions/
   openssl-vcpkg/action.yml           # OpenSSL via vcpkg on Windows (release-only triplets, binary cache)
   openssl-vcpkg/triplets/            # overlay triplets used by openssl-vcpkg
   windows-setup-tls-env/action.yml   # combines aws-lc-sys-deps + openssl-vcpkg + openssl-no-vendor (Windows only)
+  self-test/                         # fixture crate the self-test workflow runs the actions on
+  .github/workflows/self-test.yml    # runs this commit's actions (./<name>) on the fixture
 ```
+
+## Testing changes
+
+Consumers run `@main`, so a broken action breaks every repository at once.
+`self-test.yml` runs the actions from the commit under test (`uses: ./<name>`)
+on the fixture crate in `self-test/`, copied to the workspace root, across
+the same OS/toolchain matrix the consumers use. actionlint only checks
+workflow files, not `action.yml`, so this is the only pre-merge check that
+an action loads and runs.
+
+- `windows-setup-tls-env` references its sub-actions as `@main` (see
+  "Versioning" in `README.md`), so it cannot test a change to them. The
+  self-test runs `aws-lc-sys-deps`, `openssl-vcpkg` and `openssl-no-vendor`
+  directly, and only checks that the aggregate loads.
+- `security` and `semver` are not exercised: they need a write token for
+  check runs and a published baseline crate respectively.
+- Keep the fixture clean under the `lint` action (clippy and rustdoc with
+  `-D warnings` on every feature set).
 
 ## Composite action constraints
 
@@ -48,6 +68,7 @@ All six amqp-rs crate repositories call these actions. Their workflow files are 
 3. Add a `shell:` to every `run:` step.
 4. Document it in `README.md` with a usage snippet.
 5. Add the directory to `directories:` in `.github/dependabot.yml` — see below.
+6. Exercise it in `.github/workflows/self-test.yml` — see "Testing changes".
 
 ## Pinned tool versions
 
