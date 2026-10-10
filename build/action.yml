@@ -47,7 +47,11 @@ runs:
       with:
         toolchain: ${{ inputs.rust == 'msrv' && steps.msrv.outputs.version || inputs.rust }}
 
+    # rust-cache keys on every installed rustc, so a nightly entry can only be
+    # restored by reruns on the same nightly: do not upload one per day.
     - uses: Swatinem/rust-cache@v2
+      with:
+        save-if: ${{ inputs.rust != 'nightly' }}
 
     - name: Pin the toolchain and deny warnings
       shell: bash

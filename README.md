@@ -72,6 +72,8 @@ Installs a Rust toolchain, sets up build caching, checks the workspace feature b
 | `test-features` | empty | Extra feature sets to test, one per line; each runs `cargo test --no-default-features --features <set>` after the default-features run |
 | `test-args` | empty | Extra arguments for every `cargo test` run, e.g. `--lib` to run only unit tests where integration tests need a service, or `-p <package>` in a virtual workspace |
 
+Build caches are saved for every toolchain except `nightly`: a new nightly ships every day and the cache key includes it, so a saved nightly cache could only ever serve reruns.
+
 For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolchain.toml` cannot silently swap the matrix toolchain) and appends `-D warnings` to `RUSTFLAGS`. On toolchains older than stable it also appends `-A unknown_lints`, so an `allow` for a lint newer than the MSRV does not fail the build. Pass extra rustflags through a job-level `RUSTFLAGS`: they are kept, whereas `.cargo/config.toml` rustflags are ignored by cargo once `RUSTFLAGS` is set.
 
 ### `aws-lc-sys-deps`
