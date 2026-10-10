@@ -19,6 +19,7 @@ actions/
   windows-setup-tls-env/action.yml   # combines aws-lc-sys-deps + openssl-vcpkg + openssl-no-vendor (Windows only)
   self-test/                         # fixture crate the self-test workflow runs the actions on
   .github/workflows/self-test.yml    # runs this commit's actions (./<name>) on the fixture
+  TODO.md                            # planned work (reusable workflows)
 ```
 
 ## Testing changes
