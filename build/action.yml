@@ -18,22 +18,46 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Extract MSRV from Cargo.toml
+    - name: Read MSRV from Cargo.toml
       id: msrv
+      if: inputs.rust == 'msrv'
       shell: bash
       run: |
-        version=$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' Cargo.toml | head -1)
-        echo "version=$version" >> "$GITHUB_OUTPUT"
+        # cargo metadata resolves every valid TOML spelling and workspace
+        # inheritance; the runner image's preinstalled cargo is enough here.
+        versions=$(cargo metadata --no-deps --format-version 1 | jq -r '[.packages[].rust_version | select(. != null)] | unique | .[]')
+        case $(wc -w <<< "$versions") in
+          1) echo "version=$versions" >> "$GITHUB_OUTPUT" ;;
+          0) echo "::error file=Cargo.toml::rust: msrv needs a rust-version in Cargo.toml"; exit 1 ;;
+          *) echo "::error file=Cargo.toml::rust: msrv needs a single rust-version across the workspace, found: ${versions//$'\n'/, }"; exit 1 ;;
+        esac
 
-    - uses: dtolnay/rust-toolchain@stable
+    # @master, not @stable: upstream recommends it whenever the toolchain is
+    # passed as an input.
+    - uses: dtolnay/rust-toolchain@master
+      id: toolchain
       with:
         toolchain: ${{ inputs.rust == 'msrv' && steps.msrv.outputs.version || inputs.rust }}
 
     - uses: Swatinem/rust-cache@v2
 
-    - name: Set RUSTFLAGS
+    - name: Pin the toolchain and deny warnings
       shell: bash
-      run: echo "RUSTFLAGS=-D warnings" >> "$GITHUB_ENV"
+      env:
+        RUST: ${{ inputs.rust }}
+        TOOLCHAIN: ${{ steps.toolchain.outputs.name }}
+      run: |
+        # A rust-toolchain(.toml) file would otherwise override the toolchain
+        # selected above for every cargo call, msrv/beta/nightly included.
+        echo "RUSTUP_TOOLCHAIN=$TOOLCHAIN" >> "$GITHUB_ENV"
+        # Toolchains older than stable do not know the newest lints, so an
+        # `allow` for one would fail as `unknown_lints` under `-D warnings`.
+        case $RUST in
+          stable|beta|nightly) deny="-D warnings" ;;
+          *) deny="-D warnings -A unknown_lints" ;;
+        esac
+        # Extend, rather than replace, RUSTFLAGS set by the calling job.
+        echo "RUSTFLAGS=${RUSTFLAGS:+$RUSTFLAGS }$deny" >> "$GITHUB_ENV"
 
     - uses: taiki-e/install-action@v2
       if: inputs.check == 'true'

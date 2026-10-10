@@ -25,7 +25,7 @@ actions/
 - Boolean inputs are strings: compare with `== 'true'` / `== 'false'`, not `== true`.
 - Steps using `uses:` do not require `shell:`.
 - Composite actions cannot define job-level `env`, matrix strategies, services, or `GITHUB_TOKEN` permissions — those stay in the calling workflow. See `README.md` for each caller's required token scopes.
-- `$GITHUB_ENV` writes persist for the remainder of the job (including steps in the calling workflow after this action returns). The `build` action uses this to set `RUSTFLAGS=-D warnings` once rather than repeating it per step.
+- `$GITHUB_ENV` writes persist for the remainder of the job (including steps in the calling workflow after this action returns). The `build` action uses this to export `RUSTUP_TOOLCHAIN` and append `-D warnings` to the caller's `RUSTFLAGS` once rather than repeating them per step; append, never overwrite, so job-level flags survive.
 
 ## Consumers
 
