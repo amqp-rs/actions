@@ -112,7 +112,12 @@ Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step
 
 Consumers reference these actions as `amqp-rs/actions/<name>@main`, not by commit SHA or tag. This is on purpose. The amqp-rs maintainers own this repository, and it exists to synchronize action bumps across all amqp-rs repositories. A change merged here, such as a new major of `actions/checkout`, reaches every crate's CI at once. Pinning consumers would mean the same bump in every repository again.
 
-Inside this repository, third-party actions are referenced by major tag (e.g. `actions/checkout@v7`). They are kept current by this repository's Dependabot config, so the consumer repositories configure Dependabot for `cargo` only.
+Inside this repository, third-party actions are referenced by major tag (e.g. `actions/checkout@v7`) and kept current by this repository's Dependabot config. Two kinds of dependency are outside that loop:
+
+- `dtolnay/rust-toolchain` picks the toolchain from the ref, so it is referenced by branch (`@master` with an explicit toolchain, `@stable` otherwise), as its README recommends, rather than by version tag. Dependabot never updates branch refs, so upstream changes reach CI without a pull request.
+- Tools installed through an action input (`actionlint`, `cargo-hack`) are pinned to a version and bumped by hand.
+
+Consumer repositories therefore only need Dependabot for `cargo`.
 
 ## Workflow token permissions
 
@@ -142,6 +147,27 @@ For the security workflow, use separate jobs with the event filters and
 permissions shown in the [crate workflows](https://github.com/amqp-rs/async-openssl/blob/main/.github/workflows/security.yaml).
 
 ## Typical workflow patterns
+
+### Triggers
+
+```yaml
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+```
+
+Do not add a `tags:` push trigger: a release tag is pushed on a commit `main` has already built, so it only runs every workflow a second time. The `concurrency` block cancels a pull request's previous run when it is pushed to again. The build and security workflows also run on a weekly `schedule`.
+
+The snippets below are the steps of the build job; the last pattern shows a complete job definition with its matrix.
 
 ### Standard crate (rustls / aws-lc-rs backend)
 
@@ -178,13 +204,15 @@ steps:
 
 ### Crate requiring a service for tests (e.g. lapin + RabbitMQ)
 
-Split into two jobs — `check` runs cross-platform, `test` runs Linux-only with the service:
+Split into two jobs — `check` runs cross-platform (with the unit tests), `test` runs Linux-only with the service. Nightly failures do not fail the run (`continue-on-error`), and `fail-fast: false` keeps one failing entry from cancelling the others:
 
 ```yaml
 jobs:
   check:
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable]
@@ -194,19 +222,22 @@ jobs:
           - { os: ubuntu-latest, rust: msrv }
     steps:
       - uses: amqp-rs/actions/checkout@main
+      - uses: amqp-rs/actions/windows-setup-tls-env@main
       - uses: amqp-rs/actions/build@main
         with:
           rust: ${{ matrix.rust }}
-          test: 'false'
+          test-args: --lib  # unit tests only: integration tests need the broker
 
   test:
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
     services:
       rabbitmq:
         image: rabbitmq:latest
         ports:
           - 5672:5672
     strategy:
+      fail-fast: false
       matrix:
         rust: [nightly, beta, stable, msrv]
     steps:
