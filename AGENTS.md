@@ -71,16 +71,15 @@ All six amqp-rs crate repositories call these actions. Their workflow files are 
 5. Add the directory to `directories:` in `.github/dependabot.yml` — see below.
 6. Exercise it in `.github/workflows/self-test.yml` — see "Testing changes".
 
-## Pinned tool versions
+## Tool versions
 
-Dependabot only updates `uses:` refs. Tools installed through an action input
-are pinned here and bumped by hand, so that an upstream release cannot change
-every repository's CI at once without a reviewed change:
+Dependabot only updates `uses:` refs, never a tool version given through an
+action input:
 
-| Tool | Where |
-|---|---|
-| `actionlint` | `version:` in `actionlint/action.yml` |
-| `cargo-hack` | `tool:` in `build/action.yml` and `lint/action.yml` (keep them equal) |
+| Tool | Where | Version |
+|---|---|---|
+| `actionlint` | `version:` in `actionlint/action.yml` | Exact, bumped by hand: a new release can add checks that turn every repository's CI red at once |
+| `cargo-hack` | `tool:` in `build/action.yml` and `lint/action.yml` (keep them equal) | `0.6`, which `taiki-e/install-action@v2` resolves to the latest 0.6.x it knows; moving to a new minor is done by hand |
 
 ## Dependabot
 

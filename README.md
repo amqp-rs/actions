@@ -115,7 +115,7 @@ Consumers reference these actions as `amqp-rs/actions/<name>@main`, not by commi
 Inside this repository, third-party actions are referenced by major tag (e.g. `actions/checkout@v7`) and kept current by this repository's Dependabot config. Two kinds of dependency are outside that loop:
 
 - `dtolnay/rust-toolchain` picks the toolchain from the ref, so it is referenced by branch (`@master` with an explicit toolchain, `@stable` otherwise), as its README recommends, rather than by version tag. Dependabot never updates branch refs, so upstream changes reach CI without a pull request.
-- Tools installed through an action input (`actionlint`, `cargo-hack`) are pinned to a version and bumped by hand.
+- Tools installed through an action input are invisible to Dependabot. `actionlint` is pinned to an exact version and bumped by hand, because a new release can add checks. `cargo-hack` is requested as `0.6`, which `taiki-e/install-action` resolves to the latest 0.6.x; moving to a new minor is done by hand.
 
 Consumer repositories therefore only need Dependabot for `cargo`.
 

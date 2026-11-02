@@ -74,8 +74,8 @@ runs:
     - uses: taiki-e/install-action@v2
       if: inputs.check == 'true' && inputs.rust != 'beta' && inputs.rust != 'nightly'
       with:
-        # Pinned, see "Pinned tool versions" in AGENTS.md.
-        tool: cargo-hack@0.6.45
+        # Latest 0.6.x, see "Tool versions" in AGENTS.md.
+        tool: cargo-hack@0.6
 
     # --all-targets includes the library as users build it; --bins --examples
     # --tests alone only compiled it as a unit-test harness.
