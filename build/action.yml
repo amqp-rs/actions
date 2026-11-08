@@ -18,8 +18,12 @@ inputs:
     description: Extra feature sets to test, one per line; each runs cargo test --no-default-features --features <set>
     required: false
     default: ''
+  test-runs:
+    description: Extra cargo test runs, one per line, each given as its arguments split on whitespace (e.g. -p <package> --no-default-features); --locked is always passed, and so is --no-fail-fast unless the run or test-args has it
+    required: false
+    default: ''
   test-args:
-    description: Extra arguments for every cargo test run (e.g. --lib, or -p <package> in a virtual workspace)
+    description: Extra arguments for every cargo test run, on one or more lines (e.g. --lib, or -p <package> in a virtual workspace); test harness arguments after a -- on each line go after each run's own
     required: false
     default: ''
 
@@ -103,26 +107,13 @@ runs:
       shell: bash
       run: cargo hack check --each-feature --workspace --no-dev-deps
 
+    # Every run goes ahead when an earlier one fails, so that one job reports
+    # each failing configuration; the step fails at the end.
     - name: Run cargo test
       if: inputs.test == 'true'
       shell: bash
       env:
         TEST_ARGS: ${{ inputs.test-args }}
-      run: |
-        read -ra args <<< "$TEST_ARGS"
-        cargo test --locked "${args[@]}"
-
-    - name: Run cargo test for each extra feature set
-      if: inputs.test == 'true' && inputs.test-features != ''
-      shell: bash
-      env:
-        TEST_ARGS: ${{ inputs.test-args }}
         TEST_FEATURES: ${{ inputs.test-features }}
-      run: |
-        read -ra args <<< "$TEST_ARGS"
-        while read -r features; do
-          [ -n "$features" ] || continue
-          echo "::group::cargo test --no-default-features --features '$features'"
-          cargo test --locked --no-default-features --features "$features" "${args[@]}"
-          echo "::endgroup::"
-        done <<< "$TEST_FEATURES"
+        TEST_RUNS: ${{ inputs.test-runs }}
+      run: bash "$GITHUB_ACTION_PATH/run-tests.sh"

@@ -26,8 +26,9 @@ the Versioning section in `README.md`:
 - `build`: the standard matrix (stable on ubuntu/windows/macos, plus
   nightly/beta/msrv on ubuntu, nightly `continue-on-error`,
   `fail-fast: false`) with inputs for the TLS setup action to run, `test`,
-  `test-features` and `test-args`. lapin's RabbitMQ `test` job may stay in
-  its own workflow, since services cannot be made conditional cleanly.
+  `test-features`, `test-runs` and `test-args`. lapin's RabbitMQ `test` job
+  may stay in its own workflow, since services cannot be made conditional
+  cleanly.
 
 Constraints to keep in mind:
 

@@ -50,6 +50,59 @@ jobs:
         with:
           rust: ${{ matrix.rust }}
           test-features: shout
+          test-runs: --test greeting
+
+  # How build/run-tests.sh composes and runs cargo test, against a stub cargo.
+  # macOS runs it with bash 3.2.
+  run-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Check the cargo test invocations
+        shell: bash
+        run: self-test/check-run-tests.sh
+
+  # The build action must fail when a test run fails, after running the others.
+  build-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Move the fixture crate to the workspace root
+        shell: bash
+        run: cp -R self-test/. .
+      # The fixture's greeting test appends its greeting to this file.
+      - name: Record the greetings of the test runs
+        shell: bash
+        run: echo "FIXTURE_GREETINGS=$RUNNER_TEMP/greetings" >> "$GITHUB_ENV"
+      - uses: ./build
+        id: build
+        continue-on-error: true
+        with:
+          check: 'false'
+          test-runs: |
+            --features no-such-feature
+            --features shout --test greeting
+      # The default run's greeting, none from the failed run, then the last
+      # run's. A failure before the test runs leaves none, and one that stops
+      # them leaves out the last.
+      - name: Check that the failed run failed the build, after the last run
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          if [ "$OUTCOME" != failure ]; then
+            echo "::error::the build action passed although a test run failed"
+            exit 1
+          fi
+          diff -u <(printf 'hello\nHELLO\n') "$FIXTURE_GREETINGS"
 
   lint:
     runs-on: ubuntu-latest

@@ -9,6 +9,7 @@ actions/
   checkout/action.yml                # wrapper around actions/checkout (credentials not persisted)
   actionlint/action.yml              # GitHub Actions workflow linting (pinned actionlint)
   build/action.yml                   # cargo hack check (each-feature, locked) + cargo test
+  build/run-tests.sh                 # the build action's cargo test runs (test-args, test-features, test-runs)
   lint/action.yml                    # clippy + cargo doc (each-feature, -D warnings) + rustfmt
   security/action.yml                # cargo audit (rustsec)
   semver/action.yml                  # cargo-semver-checks
@@ -18,8 +19,10 @@ actions/
   openssl-vcpkg/triplets/            # overlay triplets used by openssl-vcpkg
   windows-setup-tls-env/action.yml   # combines aws-lc-sys-deps + openssl-vcpkg + openssl-no-vendor (Windows only)
   self-test/                         # fixture crate the self-test workflow runs the actions on
+  self-test/check-run-tests.sh       # checks build/run-tests.sh's cargo invocations and output with a stub cargo
   .github/workflows/self-test.yml    # runs this commit's actions (./<name>) on the fixture
   TODO.md                            # planned work (reusable workflows)
+  .gitattributes                     # keeps shell scripts LF in Windows checkouts
 ```
 
 ## Testing changes
@@ -39,6 +42,15 @@ an action loads and runs.
   check runs and a published baseline crate respectively.
 - Keep the fixture clean under the `lint` action (clippy and rustdoc with
   `-D warnings` on every feature set).
+- The fixture's tests cannot tell whether `build/run-tests.sh` placed an
+  argument right, so `self-test/check-run-tests.sh` checks its cargo
+  invocations and its output against a stub cargo; extend it with any change
+  to that script. It runs on Linux and on macOS, whose bash is 3.2: keep
+  `run-tests.sh` within what that version supports.
+- The `build-failure` job fails a real test run through the `build` action.
+  The fixture's `greets` test appends its greeting to the file that
+  `FIXTURE_GREETINGS` names, which is how the job tells that failure from one
+  that came before the test runs or stopped them.
 
 ## Composite action constraints
 

@@ -61,6 +61,8 @@ Installs a Rust toolchain, sets up build caching, checks the workspace feature b
     test: 'true'   # set to 'false' to skip cargo test
     test-features: |  # optional: extra feature sets to test, one per line
       smol
+    test-runs: |  # optional: extra cargo test runs, one per line
+      -p my-crate --no-default-features
     test-args: ''  # optional: extra cargo test arguments, e.g. --lib
 ```
 
@@ -70,7 +72,10 @@ Installs a Rust toolchain, sets up build caching, checks the workspace feature b
 | `check` | `true` | Run `cargo hack check --each-feature --workspace --all-targets`; on `stable`, also again with `--no-dev-deps` to catch features that only dev-dependencies enable; on `beta` and `nightly`, only `cargo check` with `--all-features` and with `--no-default-features` |
 | `test` | `true` | Run `cargo test` |
 | `test-features` | empty | Extra feature sets to test, one per line; each runs `cargo test --no-default-features --features <set>` after the default-features run |
-| `test-args` | empty | Extra arguments for every `cargo test` run, e.g. `--lib` to run only unit tests where integration tests need a service, or `-p <package>` in a virtual workspace |
+| `test-runs` | empty | Extra `cargo test` runs, one per line, each given as its arguments split on whitespace (no quoting), after the `test-features` runs; covers what `test-features` cannot, such as no features at all (`--no-default-features`) or a single package |
+| `test-args` | empty | Extra arguments for every `cargo test` run, on one or more lines, e.g. `--lib` to run only unit tests where integration tests need a service, or `-p <package>` in a virtual workspace; they come before each run's own arguments, except the test harness arguments after a `--` on each line, which come after them |
+
+Every `cargo test` run uses `--locked` and `--no-fail-fast`, and goes ahead when an earlier one fails, so a single job reports every failing configuration; the step then fails, with an error annotation per failed run. Each run's output is in a log group named after its command, and a failed run's output is printed again after its group, so that it shows without expanding one. cargo refuses a flag given twice: `--no-fail-fast` is left out of a run when `test-args` or the run itself has it, but neither may repeat `--locked`.
 
 Build caches are saved for every toolchain except `nightly`: a new nightly ships every day and the cache key includes it, so a saved nightly cache could only ever serve reruns.
 
