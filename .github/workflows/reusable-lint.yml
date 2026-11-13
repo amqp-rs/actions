@@ -1,0 +1,23 @@
+name: Lint (reusable)
+
+# Called from a crate repository's workflow, which keeps its own triggers:
+#
+#   jobs:
+#     lint:
+#       uses: amqp-rs/actions/.github/workflows/reusable-lint.yml@main
+#
+# A job that needs steps after the lint action (amq-protocol's generated code
+# checks) uses the lint action directly instead.
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amqp-rs/actions/checkout@main
+      - uses: amqp-rs/actions/lint@main

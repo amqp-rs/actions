@@ -1,0 +1,20 @@
+name: Semver compliance check (reusable)
+
+# Called from a crate repository's workflow, which keeps its own triggers:
+#
+#   jobs:
+#     semver:
+#       uses: amqp-rs/actions/.github/workflows/reusable-semver.yml@main
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  semver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amqp-rs/actions/checkout@main
+      - uses: amqp-rs/actions/semver@main

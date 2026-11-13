@@ -1,0 +1,5 @@
+# The fixture crate in self-test/ is the workspace at the repository root,
+# where the actions and the reusable workflows run cargo.
+[workspace]
+members = ["self-test"]
+resolver = "3"

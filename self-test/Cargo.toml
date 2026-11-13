@@ -8,3 +8,7 @@ publish = false
 
 [features]
 shout = []
+
+[lints.rust]
+# Set through RUSTFLAGS by the self-test workflow, see tests/rustflags.rs
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(fixture_rustflags)"] }

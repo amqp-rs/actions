@@ -1,0 +1,123 @@
+name: Build and test (reusable)
+
+# The standard build matrix: stable on Linux, Windows and macOS, plus nightly,
+# beta and the MSRV on Linux. Nightly failures do not fail the run, and one
+# failing entry does not cancel the others.
+#
+# Called from a crate repository's workflow, which keeps its own triggers:
+#
+#   jobs:
+#     build:
+#       uses: amqp-rs/actions/.github/workflows/reusable-build.yml@main
+#       with:
+#         setup: windows-setup-tls-env
+#
+# A job that needs a service, another target or steps of its own uses the
+# build action directly instead.
+
+on:
+  workflow_call:
+    inputs:
+      setup:
+        description: Setup action to run before the build (aws-lc-sys-deps, openssl-vcpkg or windows-setup-tls-env); none when empty
+        type: string
+        required: false
+        default: ''
+      check:
+        description: Run the cargo check steps
+        type: boolean
+        required: false
+        default: true
+      test:
+        description: Run cargo test
+        type: boolean
+        required: false
+        default: true
+      test-features:
+        description: Extra feature sets to test, one per line (see the build action)
+        type: string
+        required: false
+        default: ''
+      test-runs:
+        description: Extra cargo test runs, one per line (see the build action)
+        type: string
+        required: false
+        default: ''
+      test-args:
+        description: Extra arguments for every cargo test run (see the build action)
+        type: string
+        required: false
+        default: ''
+      linux-stable-test-features:
+        description: Feature sets to test on Linux stable only, for tests that depend on neither the OS nor the toolchain
+        type: string
+        required: false
+        default: ''
+      linux-stable-test-runs:
+        description: cargo test runs on Linux stable only, for tests that depend on neither the OS nor the toolchain
+        type: string
+        required: false
+        default: ''
+      rustflags:
+        description: Extra RUSTFLAGS, to which the build action appends its own; a caller's env does not reach this workflow
+        type: string
+        required: false
+        default: ''
+      timeout-minutes:
+        description: Job timeout in minutes; the default fails a hung run long before GitHub's 6 hours
+        type: number
+        required: false
+        default: 60
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+    env:
+      # The build action appends -D warnings to the job's RUSTFLAGS.
+      RUSTFLAGS: ${{ inputs.rustflags }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust: [stable]
+        include:
+          - os: ubuntu-latest
+            rust: nightly
+          - os: ubuntu-latest
+            rust: beta
+          - os: ubuntu-latest
+            rust: msrv
+    steps:
+      # One name per `uses:` step below: a setup action is added to both.
+      - name: Check the setup input
+        if: ${{ !contains(fromJSON('["", "aws-lc-sys-deps", "openssl-vcpkg", "windows-setup-tls-env"]'), inputs.setup) }}
+        shell: bash
+        env:
+          SETUP: ${{ inputs.setup }}
+        run: |
+          echo "::error::unknown setup action: $SETUP"
+          exit 1
+      - uses: amqp-rs/actions/checkout@main
+      - uses: amqp-rs/actions/aws-lc-sys-deps@main
+        if: inputs.setup == 'aws-lc-sys-deps'
+      - uses: amqp-rs/actions/openssl-vcpkg@main
+        if: inputs.setup == 'openssl-vcpkg'
+      - uses: amqp-rs/actions/windows-setup-tls-env@main
+        if: inputs.setup == 'windows-setup-tls-env'
+      - uses: amqp-rs/actions/build@main
+        with:
+          rust: ${{ matrix.rust }}
+          check: ${{ inputs.check }}
+          test: ${{ inputs.test }}
+          test-features: |
+            ${{ inputs.test-features }}
+            ${{ runner.os == 'Linux' && matrix.rust == 'stable' && inputs.linux-stable-test-features || '' }}
+          test-runs: |
+            ${{ inputs.test-runs }}
+            ${{ runner.os == 'Linux' && matrix.rust == 'stable' && inputs.linux-stable-test-runs || '' }}
+          test-args: ${{ inputs.test-args }}

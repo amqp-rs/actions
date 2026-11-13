@@ -1,8 +1,9 @@
 name: Self-test
 
 # Runs this commit's actions (`./<name>`, not `amqp-rs/actions/<name>@main`)
-# on the fixture crate in self-test/, so a change is exercised before it
-# reaches every consumer through @main.
+# and reusable workflows on the fixture crate in self-test/, the workspace at
+# the repository root, so a change is exercised before it reaches every
+# consumer through @main.
 
 on:
   push:
@@ -21,6 +22,10 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.rust == 'nightly' }}
+    env:
+      # The build action keeps the job's flags: the fixture's rustflags test
+      # fails without this one.
+      RUSTFLAGS: --cfg fixture_rustflags
     strategy:
       fail-fast: false
       matrix:
@@ -43,14 +48,13 @@ jobs:
       - uses: ./aws-lc-sys-deps
       - uses: ./openssl-vcpkg
       - uses: ./openssl-no-vendor
-      - name: Move the fixture crate to the workspace root
-        shell: bash
-        run: cp -R self-test/. .
       - uses: ./build
         with:
           rust: ${{ matrix.rust }}
           test-features: shout
-          test-runs: --test greeting
+          test-runs: |
+            --test greeting
+            --test rustflags -- --ignored
 
   # How build/run-tests.sh composes and runs cargo test, against a stub cargo.
   # macOS runs it with bash 3.2.
@@ -75,9 +79,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Move the fixture crate to the workspace root
-        shell: bash
-        run: cp -R self-test/. .
       # The fixture's greeting test appends its greeting to this file.
       - name: Record the greetings of the test runs
         shell: bash
@@ -110,9 +111,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - name: Move the fixture crate to the workspace root
-        shell: bash
-        run: cp -R self-test/. .
       - uses: ./lint
 
   windows-setup-tls-env:
@@ -124,3 +122,21 @@ jobs:
       # Only checks that the aggregate loads: its sub-actions come from @main
       # and are no-ops off Windows.
       - uses: ./windows-setup-tls-env
+
+  # This commit's reusable workflows. They run the actions from @main: the
+  # jobs above cover this commit's.
+  reusable-actionlint:
+    uses: ./.github/workflows/reusable-actionlint.yml
+
+  reusable-lint:
+    uses: ./.github/workflows/reusable-lint.yml
+
+  reusable-build:
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      setup: aws-lc-sys-deps
+      # The fixture's rustflags test fails where this flag does not reach rustc.
+      rustflags: --cfg fixture_rustflags
+      test-features: shout
+      test-runs: --test rustflags -- --ignored
+      linux-stable-test-runs: --test greeting

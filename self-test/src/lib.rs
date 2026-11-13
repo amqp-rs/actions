@@ -1,7 +1,8 @@
 //! Fixture crate for the amqp-rs/actions self-test workflow.
 //!
-//! The workflow copies it to the workspace root, so that the `build` and
-//! `lint` actions run on it exactly as they do on a consumer crate.
+//! It is the only member of the workspace at the repository root, so that the
+//! `build` and `lint` actions, and the reusable workflows, run on it as they
+//! do on a consumer crate.
 
 /// Returns the fixture's greeting, which the `shout` feature turns upper case.
 #[must_use]

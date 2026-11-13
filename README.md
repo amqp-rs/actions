@@ -1,6 +1,6 @@
 # actions
 
-Shared [composite GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) for the [amqp-rs](https://github.com/amqp-rs) ecosystem.
+Shared CI for the [amqp-rs](https://github.com/amqp-rs) ecosystem: [reusable workflows](#reusable-workflows), which a crate's workflow files call for their jobs, and the [composite GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) they run, [listed below](#available-actions) for the jobs that need a service, another target or steps of their own.
 
 ## Available actions
 
@@ -79,7 +79,7 @@ Every `cargo test` run uses `--locked` and `--no-fail-fast`, and goes ahead when
 
 Build caches are saved for every toolchain except `nightly`: a new nightly ships every day and the cache key includes it, so a saved nightly cache could only ever serve reruns.
 
-For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolchain.toml` cannot silently swap the matrix toolchain) and appends `-D warnings` to `RUSTFLAGS`. On toolchains older than stable it also appends `-A unknown_lints`, so an `allow` for a lint newer than the MSRV does not fail the build. Pass extra rustflags through a job-level `RUSTFLAGS`: they are kept, whereas `.cargo/config.toml` rustflags are ignored by cargo once `RUSTFLAGS` is set.
+For the rest of the job, the action exports `RUSTUP_TOOLCHAIN` (so a `rust-toolchain.toml` cannot silently swap the matrix toolchain) and appends `-D warnings` to `RUSTFLAGS`. On toolchains older than stable it also appends `-A unknown_lints`, so an `allow` for a lint newer than the MSRV does not fail the build. Pass extra rustflags through a job-level `RUSTFLAGS` (the `rustflags` input of `reusable-build.yml`, whose callers cannot set `env`): they are kept, whereas `.cargo/config.toml` rustflags are ignored by cargo once `RUSTFLAGS` is set.
 
 ### `aws-lc-sys-deps`
 
@@ -113,9 +113,74 @@ Combines `aws-lc-sys-deps`, `openssl-vcpkg`, and `openssl-no-vendor` in one step
 - uses: amqp-rs/actions/windows-setup-tls-env@main
 ```
 
+## Reusable workflows
+
+The composite actions above cannot hold job-level settings: the runner, the
+matrix, `fail-fast`, the nightly `continue-on-error`, or which job of the
+security audit may open issues. The reusable workflows in
+`.github/workflows/` hold them, so a crate's workflow file only keeps its
+triggers and calls one job:
+
+```yaml
+jobs:
+  lint:
+    uses: amqp-rs/actions/.github/workflows/reusable-lint.yml@main
+```
+
+| Workflow | Jobs | Inputs |
+|---|---|---|
+| `reusable-actionlint.yml` | `actionlint` | none |
+| `reusable-lint.yml` | `lint` | none |
+| `reusable-semver.yml` | `semver` | none |
+| `reusable-security.yml` | `audit` on push and pull request, `scheduled-audit` on schedule | none |
+| `reusable-build.yml` | `build`, over the standard matrix | see below |
+
+`reusable-build.yml` runs the `build` action on stable for Linux, Windows and
+macOS, and on nightly, beta and the MSRV for Linux. Nightly failures do not
+fail the run, and one failing entry does not cancel the others.
+
+| Input | Default | Notes |
+|---|---|---|
+| `setup` | none | Setup action to run first: `aws-lc-sys-deps`, `openssl-vcpkg` or `windows-setup-tls-env` |
+| `check`, `test` | `true` | As for the `build` action |
+| `test-features`, `test-runs`, `test-args` | none | As for the `build` action, on every matrix entry |
+| `linux-stable-test-features`, `linux-stable-test-runs` | none | Added on Linux stable only, for tests that depend on neither the OS nor the toolchain |
+| `rustflags` | none | The job's `RUSTFLAGS`, to which the `build` action appends `-D warnings` |
+| `timeout-minutes` | `60` | Job timeout, so that a hung run fails long before GitHub's 360 minutes |
+
+The composite actions stay available. Use them directly in a job that needs
+a service, another target or steps of its own: lapin's RabbitMQ `test` job,
+rustls-connector's `android` job and amq-protocol's lint job, which checks
+its generated code after the `lint` action. The workflow's timeout does not
+cover such a job: it keeps GitHub's 360 minutes unless it sets
+`timeout-minutes` itself.
+
+Constraints of called workflows:
+
+- Triggers stay in the caller: a called workflow cannot set `on:`. It sees
+  the caller's `github.event_name`, which is how the security workflow picks
+  its job.
+- A called workflow can only narrow the token its calling job grants, and
+  the caller has to grant every scope that a job of the called workflow
+  declares: GitHub refuses to start a run whose nested job asks for more.
+  The read-only workflows need `contents: read`; the calling job of the
+  security workflow grants `contents: read`, `checks: write` and
+  `issues: write`, and each job of the called workflow keeps what it needs.
+- A caller's workflow-level `env` does not reach a called workflow, and a
+  job that calls one cannot have an `env` of its own: only inputs get
+  through. `reusable-build.yml` takes `rustflags` for that reason; any
+  other variable needs a new input, or a job that uses the `build` action
+  directly.
+- Check runs are named `<calling job> / <called job>`, such as `lint / lint`.
+  Rename them in a repository's required status checks when it moves to a
+  reusable workflow.
+- A called workflow resolves `./` in the caller's checkout, so these
+  workflows reference the actions as `amqp-rs/actions/<name>@main`, also
+  when this repository's self-test calls them.
+
 ## Versioning: reference `@main`, do not pin
 
-Consumers reference these actions as `amqp-rs/actions/<name>@main`, not by commit SHA or tag. This is on purpose. The amqp-rs maintainers own this repository, and it exists to synchronize action bumps across all amqp-rs repositories. A change merged here, such as a new major of `actions/checkout`, reaches every crate's CI at once. Pinning consumers would mean the same bump in every repository again.
+Consumers reference these actions as `amqp-rs/actions/<name>@main`, and the reusable workflows as `amqp-rs/actions/.github/workflows/<file>@main`, not by commit SHA or tag. This is on purpose. The amqp-rs maintainers own this repository, and it exists to synchronize action bumps across all amqp-rs repositories. A change merged here, such as a new major of `actions/checkout`, reaches every crate's CI at once. Pinning consumers would mean the same bump in every repository again.
 
 Inside this repository, third-party actions are referenced by major tag (e.g. `actions/checkout@v7`) and kept current by this repository's Dependabot config. Two kinds of dependency are outside that loop:
 
@@ -126,11 +191,12 @@ Consumer repositories therefore only need Dependabot for `cargo`.
 
 ## Workflow token permissions
 
-These are composite actions: they use the calling job's `GITHUB_TOKEN` and cannot
-set its permissions themselves. Declare the scopes in the caller workflow or job.
+The composite actions use the calling job's `GITHUB_TOKEN` and cannot set its
+permissions themselves. The reusable workflows declare them per job, within
+what their caller grants. Declare the scopes in the caller workflow or job.
 When any `permissions` are declared, GitHub sets every unlisted scope to `none`.
 
-| Calling workflow | Required `permissions` |
+| Job | Required `permissions` |
 |---|---|
 | Checkout, actionlint, build, lint, semver, TLS setup | `contents: read` |
 | Security on push or pull request | `contents: read`, `checks: write` |
@@ -148,8 +214,20 @@ permissions:
   contents: read
 ```
 
-For the security workflow, use separate jobs with the event filters and
-permissions shown in the [crate workflows](https://github.com/amqp-rs/async-openssl/blob/main/.github/workflows/security.yaml).
+For the security workflow, call `reusable-security.yml`, which has one job per
+row above, from a job that grants all three scopes; the called workflow
+narrows the grant for each job. A grant that leaves out a scope one of its
+jobs declares does not narrow that job: GitHub refuses to start the run.
+
+```yaml
+jobs:
+  security:
+    permissions:
+      contents: read
+      checks: write
+      issues: write
+    uses: amqp-rs/actions/.github/workflows/reusable-security.yml@main
+```
 
 ## Typical workflow patterns
 
@@ -172,69 +250,55 @@ concurrency:
 
 Do not add a `tags:` push trigger: a release tag is pushed on a commit `main` has already built, so it only runs every workflow a second time. The `concurrency` block cancels a pull request's previous run when it is pushed to again. The build and security workflows also run on a weekly `schedule`.
 
-The snippets below are the steps of the build job; the last pattern shows a complete job definition with its matrix.
-
-### Standard crate (rustls / aws-lc-rs backend)
+### Standard crate
 
 ```yaml
-steps:
-  - uses: amqp-rs/actions/checkout@main
-  - uses: amqp-rs/actions/aws-lc-sys-deps@main
-  - uses: amqp-rs/actions/build@main
-    with:
-      rust: ${{ matrix.rust }}
+jobs:
+  build_and_test:
+    uses: amqp-rs/actions/.github/workflows/reusable-build.yml@main
 ```
 
-### Crate with full TLS environment (amq-protocol, tcp-stream, lapin)
+### Crate with a TLS environment
+
+`aws-lc-sys-deps` for the rustls / aws-lc-rs backend (rustls-connector),
+`openssl-vcpkg` for OpenSSL (async-openssl), `windows-setup-tls-env` for all
+of them (amq-protocol, tcp-stream, lapin):
 
 ```yaml
-steps:
-  - uses: amqp-rs/actions/checkout@main
-  - uses: amqp-rs/actions/windows-setup-tls-env@main
-  - uses: amqp-rs/actions/build@main
+jobs:
+  build_and_test:
+    uses: amqp-rs/actions/.github/workflows/reusable-build.yml@main
     with:
-      rust: ${{ matrix.rust }}
-```
-
-### OpenSSL crate
-
-```yaml
-steps:
-  - uses: amqp-rs/actions/checkout@main
-  - uses: amqp-rs/actions/openssl-vcpkg@main
-  - uses: amqp-rs/actions/build@main
-    with:
-      rust: ${{ matrix.rust }}
+      setup: windows-setup-tls-env
+      # Extra feature sets, and a run that only Linux stable needs
+      test-features: |
+        native-tls-futures,tokio
+        openssl-futures,smol
+      linux-stable-test-runs: -p amq-protocol-tcp --no-default-features
 ```
 
 ### Crate requiring a service for tests (e.g. lapin + RabbitMQ)
 
-Split into two jobs — `check` runs cross-platform (with the unit tests), `test` runs Linux-only with the service. Nightly failures do not fail the run (`continue-on-error`), and `fail-fast: false` keeps one failing entry from cancelling the others:
+Split into two jobs: `check` calls the reusable workflow and runs only the
+tests that need no broker, selected through `test-args`, and `test` runs
+Linux-only with the service, using the `build` action directly:
 
 ```yaml
 jobs:
   check:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.rust == 'nightly' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        rust: [stable]
-        include:
-          - { os: ubuntu-latest, rust: nightly }
-          - { os: ubuntu-latest, rust: beta }
-          - { os: ubuntu-latest, rust: msrv }
-    steps:
-      - uses: amqp-rs/actions/checkout@main
-      - uses: amqp-rs/actions/windows-setup-tls-env@main
-      - uses: amqp-rs/actions/build@main
-        with:
-          rust: ${{ matrix.rust }}
-          test-args: --lib  # unit tests only: integration tests need the broker
+    uses: amqp-rs/actions/.github/workflows/reusable-build.yml@main
+    with:
+      setup: windows-setup-tls-env
+      # Only the test job has the broker: run the unit tests and the test
+      # files named *_mock, which need none
+      test-args: |
+        --lib
+        --test *_mock
 
   test:
     runs-on: ubuntu-latest
+    # The reusable workflow's timeout does not cover this job
+    timeout-minutes: 60
     continue-on-error: ${{ matrix.rust == 'nightly' }}
     services:
       rabbitmq:
@@ -245,10 +309,15 @@ jobs:
       fail-fast: false
       matrix:
         rust: [nightly, beta, stable, msrv]
+        include:
+          # A configuration that needs no broker and does not depend on the toolchain
+          - rust: stable
+            test-runs: --no-default-features
     steps:
       - uses: amqp-rs/actions/checkout@main
       - uses: amqp-rs/actions/build@main
         with:
           rust: ${{ matrix.rust }}
           check: 'false'
+          test-runs: ${{ matrix.test-runs }}
 ```

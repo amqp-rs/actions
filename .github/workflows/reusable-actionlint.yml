@@ -1,0 +1,22 @@
+name: actionlint (reusable)
+
+# Called from a crate repository's workflow, which keeps its own triggers:
+#
+#   jobs:
+#     actionlint:
+#       uses: amqp-rs/actions/.github/workflows/reusable-actionlint.yml@main
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      # A called workflow resolves `./` in the caller's checkout, so the
+      # actions are referenced by repository.
+      - uses: amqp-rs/actions/checkout@main
+      - uses: amqp-rs/actions/actionlint@main
