@@ -242,13 +242,9 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 ```
 
-Do not add a `tags:` push trigger: a release tag is pushed on a commit `main` has already built, so it only runs every workflow a second time. The `concurrency` block cancels a pull request's previous run when it is pushed to again. The build and security workflows also run on a weekly `schedule`.
+Do not add a `tags:` push trigger: a release tag points at a commit that the push to its branch already built, so it only runs every workflow a second time. Do not add a `concurrency` block either: the runs of a branch would wait for each other, and GitHub cancels a waiting run when a newer one arrives, so a push to `main` quickly followed by another would end without a result. The build and security workflows also run on a weekly `schedule`.
 
 ### Standard crate
 
