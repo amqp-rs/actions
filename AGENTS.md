@@ -1,4 +1,6 @@
-# CLAUDE.md — amqp-rs/actions
+# AGENTS.md — amqp-rs/actions
+
+This file provides guidance to coding agents working with code in this repository.
 
 This repository contains the shared CI of the amqp-rs ecosystem: reusable workflows in `.github/workflows/` and the [composite GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) they run. Each action lives in its own directory as an `action.yml` file.
 
