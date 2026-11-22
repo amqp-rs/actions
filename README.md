@@ -1,6 +1,13 @@
-# actions
+<div align="center">
 
-Shared CI for the [amqp-rs](https://github.com/amqp-rs) ecosystem: [reusable workflows](#reusable-workflows), which a crate's workflow files call for their jobs, and the [composite GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) they run, [listed below](#available-actions) for the jobs that need a service, another target or steps of their own.
+[![Self-test](https://github.com/amqp-rs/actions/actions/workflows/self-test.yml/badge.svg)](https://github.com/amqp-rs/actions/actions/workflows/self-test.yml)
+[![LICENSE](https://img.shields.io/github/license/amqp-rs/actions)](LICENSE)
+
+**Shared CI for the amqp-rs ecosystem.**
+
+</div>
+
+The CI of the [amqp-rs](https://github.com/amqp-rs) crates lives here: [reusable workflows](#reusable-workflows), which a crate's workflow files call for their jobs, and the [composite GitHub Actions](https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action) they run, [listed below](#available-actions) for the jobs that need a service, another target or steps of their own.
 
 ## Available actions
 
